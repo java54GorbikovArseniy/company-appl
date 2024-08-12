@@ -2,11 +2,13 @@ package telran.employees;
 
 import telran.view.InputOutput;
 import telran.view.Item;
+import telran.view.Menu;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class CompanyApplItems {
@@ -64,20 +66,23 @@ public class CompanyApplItems {
     }
 
     private static void addEmployee(InputOutput inputOutput) {
-        Employee employee = readEmployee(inputOutput);
-        String type = inputOutput.readStringOptions("Enter employee type", "Wrong Employee type",
-                new HashSet<String>(List.of(
-                        "WageEmployee",
-                        "Manager",
-                        "SalesPerson")));
-        Employee result = switch (type) {
-            case "WageEmployee" -> getWageEmployee(employee, inputOutput);
-            case "Manager" -> getManager(employee, inputOutput);
-            case "SalesPerson" -> getSalesPerson(employee, inputOutput);
-            default -> null;
-        };
+        Item[] items = new Item[]{
+                Item.of("WageEmployee", io -> addEmployeeItem(io, CompanyApplItems::getWageEmployee)),
+                Item.of("SalesPerson", io -> addEmployeeItem(io, CompanyApplItems::getSalesPerson)),
+                Item.of("Manager", io -> addEmployeeItem(io, CompanyApplItems::getManager)),
+                Item.ofExit()};
+        Menu menu = new Menu("Choose Employee type", items);
+        menu.perform(inputOutput);
+        inputOutput.writeLine("=".repeat(40));
+    }
+
+    static private void addEmployeeItem(InputOutput io,
+                                        BiFunction<Employee, InputOutput, Employee> actualAdding) {
+        Employee empl = readEmployee(io);
+        Employee result = actualAdding.apply(empl, io);
         company.addEmployee(result);
-        inputOutput.writeLine("Employee has been added");
+        io.writeLine("Employee has been added");
+        io.writeLine("=".repeat(40));
     }
 
     private static Employee getSalesPerson(Employee employee, InputOutput inputOutput) {
@@ -107,13 +112,14 @@ public class CompanyApplItems {
 
     private static Employee readEmployee(InputOutput inputOutput) {
         long id = getId(inputOutput);
-        int basicSalary = inputOutput.readNumberRange("Enter basic salary", "Wrong basic salary value", 2000, 20000).intValue();;
+        int basicSalary = inputOutput.readNumberRange("Enter basic salary", "Wrong basic salary value", 2000, 20000).intValue();
+        ;
         String department = inputOutput.readStringOptions("EnterDepartment " + departments, "Wrong department", departments);
         return new Employee(id, basicSalary, department);
     }
 
     private static long getId(InputOutput inputOutput) {
-        long id = inputOutput.readNumberRange("Enter id value", "Wrong id value",1000, 10000).longValue();
+        long id = inputOutput.readNumberRange("Enter id value", "Wrong id value", 1000, 10000).longValue();
         return id;
     }
 }
